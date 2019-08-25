@@ -1,0 +1,72 @@
+#lang pie
+; THE BIG LESSONS
+
+; the second commandements
+; which-Nat; the step is applied as follow:
+; (step n)
+; where obviously step is a
+; (-> Nat
+;   X)
+
+; iter-Nat; the step is applied as follow:
+; (step
+;   (iter-Nat n
+;      base
+;      step))
+; where obviously step is a
+; (-> X
+;   X)
+
+; rec-Nat; the step is applied as follow:
+; (step n
+;   (rec-Nat n
+;     base
+;     step))
+; where obviously step is a
+; (-> Nat X
+;   X)
+
+; rec-List; the step is applied as follow:
+; (step e es
+;   (rec-List es
+;     base
+;     step))
+
+; where obviously step is a
+; (-> E (list E) X
+;   X)
+
+; The Final Law of lambda
+; if x is an X and y is a Y, then
+; (lambda (y)
+;   x)
+;
+; is a
+; (Pi ((y Y))
+;  X)
+
+; The final Law of Application
+;
+; if f is a
+; (Pi ((y Y))
+;   X)
+;
+; if z is a Y, then
+; (f z)
+; is an X
+; where every y has been consistently replaced by z.
+
+; The Final First Commandmenet of Lambda
+; if two lambda-expressions can be made the same
+;  (Pi ((y Y))
+;    X),
+; by consistently renaming their variables, then they are the same.
+
+
+; The final Second Commandment of Lambda
+; if f is a
+; (Pi ((y Y))
+;   X),
+; and y does not occur in f, then f is the same as
+; (lambda (y)
+;  (f y))

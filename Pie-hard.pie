@@ -1,0 +1,147 @@
+#lang pie
+
+(claim rugbrod
+  (List Atom))
+
+(define rugbrod
+  (:: 'rye-flour
+    (:: 'rye-kernel
+      (:: 'water
+        (:: 'sourdough
+          (:: 'salt nil))))))
+
+(claim toppings
+  (List Atom))
+(define toppings
+  (:: 'potato
+    (:: 'butter nil)))
+
+(claim condiments
+  (List Atom))
+
+(define condiments
+  (:: 'chives
+    (:: 'mayonnaise nil)))
+
+(claim length
+  (Pi ((E U))
+    (-> (List E)
+        Nat)))
+
+(claim step-length
+  (Pi ((E U))
+    (-> E (List E) Nat
+        Nat)))
+
+(define step-length
+  (lambda (E)
+    (lambda (e es lengthes)
+      (add1 lengthes))))
+
+(define length
+  (lambda (E)
+    (lambda (es)
+      (rec-List es
+        0
+        (step-length E)))))
+
+(claim length-Atom
+  (-> (List Atom)
+      Nat))
+(define length-Atom
+  (length Atom))
+
+(claim step-append
+  (Pi ((E U))
+    (-> E (List E) (List E)
+        (List E))))
+
+(define step-append
+  (lambda (E)
+    (lambda (e es1 es2)
+      (:: e es2))))
+
+(claim append
+  (Pi ((E U))
+    (-> (List E) (List E)
+        (List E))))
+
+(define append
+  (lambda (E)
+    (lambda (es1 es2)
+      (rec-List es1
+        es2
+        (step-append E)))))
+
+(claim snoc
+  (Pi ((E U))
+    (-> (List E) E
+        (List E))))
+
+(define snoc
+  (lambda (E)
+    (lambda (es e)
+      (rec-List es
+        (:: e nil)
+        (step-append E)))))
+
+(claim concat
+  (Pi ((E U))
+    (-> (List E) (List E)
+        (List E))))
+
+(claim step-concat
+  (Pi ((E U))
+    (-> E (List E) (List E)
+        (List E))))
+
+(define step-concat
+  (lambda (E)
+    (lambda (e es1 es2)
+      (snoc E es2 e))))
+
+(define concat
+  (lambda (E)
+    (lambda (es1 es2)
+      (rec-List es2
+        es1
+        (step-concat E)))))
+
+(claim reverse
+  (Pi ((E U))
+    (-> (List E)
+        (List E))))
+
+(claim step-reverse
+  (Pi ((E U))
+    (-> E (List E) (List E)
+        (List E))))
+
+(define step-reverse
+  (lambda (E)
+    (lambda (e source target)
+      (snoc E target e))))
+
+(define reverse
+  (lambda (E)
+    (lambda (source)
+      (rec-List source
+        (the (List E) nil)
+        (step-reverse E)))))
+
+(claim kartoffelmad
+  (List Atom))
+
+(define kartoffelmad
+  (append Atom
+    (concat Atom
+      toppings condiments)
+    (reverse Atom
+      (:: 'plate
+        (:: 'rye-bread nil)))))
+
+
+
+
+
+

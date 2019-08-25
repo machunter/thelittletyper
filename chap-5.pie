@@ -1,0 +1,240 @@
+#lang pie
+(claim expectations
+  (List Atom))
+
+(define expectations
+  (:: 'cooked
+    (:: 'eaten
+      (:: 'tried-cleaning
+        (:: 'understood
+          (:: 'slept nil))))))
+
+;what is a List
+;what is ::
+;what is nil
+
+;List is a type constructor
+;nil is a (List Atom), (List Nat)m; basically it's a (List A), A U
+;nil is also a constructor
+
+(claim rugbrod
+  (List Atom))
+
+(define rugbrod
+  (:: 'rye-flour
+    (:: 'rye-kernel
+      (:: 'water
+        (:: 'sourdough
+          (:: 'sal nil))))))
+
+; :: makes a list bigger, while add1 makes a Nat bigger
+; nil is the smallest list, while zero is the smallest Nat
+
+; (rec-List target
+;   base
+;   step)
+; is the eliminator for (List E), just as rec-Nat is the eliminator for Nat
+; 
+; target: (List E)
+; base: X
+; step:
+; (-> E (List E) X
+;  X)
+;
+; note, that in rec-Nat the step is a
+; (-> Nat X
+;  X)
+
+; we can use this to calculate say the lenght of the sum of a list
+; let's try
+
+(claim step-blank-rectangle
+  (-> Atom (List Atom) Nat
+      Nat))
+
+(define step-blank-rectangle
+  (lambda (e es n)
+    (add1 n)))
+
+; note in the book the definitions above a not fully define, we mimic with *-blank-rectangle
+
+(claim toppings
+  (List Atom))
+
+(define toppings
+  (:: 'potato
+    (:: 'butter nil)))
+
+(claim condiments
+  (List Atom))
+
+(define condiments
+  (:: 'chives
+    (:: 'mayonnaise nil)))
+
+(rec-List condiments
+  0
+  step-blank-rectangle)
+
+; this function really calculates the lenght but ONLY for Atom
+; we would need to define one for every E used in a List E
+; Pi to the rescue
+
+(claim length
+  (Pi ((E U))
+    (-> (List E)
+        Nat)))
+
+(claim step-length
+  (Pi ((E U))
+    (-> E (List E) Nat
+        Nat)))
+
+(define step-length
+  (lambda (E)
+    (lambda (e es length_es)
+      (add1 length_es))))
+
+(define length
+  (lambda (E)
+    (lambda (es)
+      (rec-List es
+        0
+        (step-length E)))))
+
+(claim length-Atom
+  (-> (List Atom)
+      Nat))
+
+(define length-Atom
+  (length Atom))
+
+(length-Atom expectations) ; 5
+(length-Atom rugbrod) ; 5
+(length-Atom condiments) ; 2
+(length-Atom toppings) ; 2
+
+
+; Now let's define a function that appends two list
+; So we keep one of the list as is, so it will be the base
+; the step would take each element of the first list and append them to the second list
+; since the list have to be the same types it will look like
+
+(claim append
+  (Pi ((E U))
+    (-> (List E) (List E)
+        (List E))))
+
+
+(claim step-append
+  (Pi ((E U))
+    (-> E (List E) (List E)
+        (List E))))
+
+(define step-append
+  (lambda (E)
+    (lambda (e es appended_es)
+      (:: e appended_es))))
+
+(define append
+  (lambda (E)
+    (lambda (start end)
+      (rec-List start
+        end
+        (step-append E)))))
+        
+(append Atom toppings expectations)
+
+
+; we want to do this: (snoc Atom toppings'rye-bread) and we want the result to be
+; (:: 'potato
+;   (:: 'butter
+;     (:: 'rye-bread nil)))
+; i.e. we append to the end of the first list
+; easy we make a list of the second term, and append it.
+
+;what's the type of snoc
+
+(claim snoc
+  (Pi ((E U))
+    (-> (List E) E
+        (List E))))
+
+(define snoc
+  (lambda (E)
+    (lambda (start e)
+      (rec-List start
+      (:: e nil)
+      (step-append E)))))
+
+(snoc Atom toppings'rye-bread)
+
+; let's define concat that does the same thing as append, but uses snoc
+
+(claim concat ; same as append
+  (Pi ((E U))
+    (-> (List E) (List E)
+        (List E))))
+
+(claim step-concat ; same as step-append
+  (Pi ((E U))
+    (-> E (List E) (List E)
+        (List E))))
+
+(define step-concat ; different, it's parametric (E), and reverses the args
+  (lambda (E)
+    (lambda (e es concat_es)
+      (snoc E concat_es e))))
+
+(define concat ; different
+  (lambda (E)
+    (lambda (start end)
+      (rec-List end ; we are eliminating the end
+        start ; we are keeping the front, because we append to the end
+        (step-concat E)))))
+
+(append Atom toppings expectations) ; does the same thing as append
+
+; now how do we use this to reverse?
+
+(claim reverse
+  (Pi ((E U))
+    (-> (List E)
+        (List E))))
+
+
+(claim step-reverse
+  (Pi ((E U))
+    (-> E (List E) (List E)
+        (List E))))
+
+(define step-reverse
+  (lambda (E)
+    (lambda (e es reverse_es)
+      (snoc E reverse_es e))))
+
+(define reverse
+  (lambda (E)
+    (lambda (es)
+      (rec-List es
+        (the (List E) nil)
+        (step-reverse E)))))
+
+(reverse Atom (:: 'hello nil))
+; same as
+((step-reverse Atom) 'hello nil
+  (rec-List (the (List Atom) nil)
+    (the (List Atom) nil)
+    (step-reverse Atom)))
+; same as
+; nees more work here
+
+(snoc Atom nil 'hello)
+
+
+(reverse Atom (:: 'hello (:: 'burc nil)))
+; same as
+((step-reverse Atom) 'hello (:: 'burc nil)
+  (rec-List (:: 'burc nil)
+    (the (List Atom) nil)
+    (step-reverse Atom)))

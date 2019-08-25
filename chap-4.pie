@@ -1,0 +1,150 @@
+#lang pie
+
+; all about eliminators
+
+(claim Pear
+  U)
+
+(define Pear
+  (Pair Nat Nat))
+
+;an eliminator for Pear should unpack the information in a Pear
+
+
+(claim elim-Pair
+  (Pi ((A U)
+       (D U)
+       (X U))
+    (-> (Pair A D)
+        (-> A D
+            X)
+        X)))
+
+;Pi is the new keyword, because lambda falls short
+;an attempt to define the type of elim-Pair
+;would look like this
+
+; (-> A D
+;     X
+;     (Pair A D)
+;     (-> A D
+;      X)
+;  X)
+
+; because in an expression like
+; ( -> Y
+;   X)
+; Are not type constructors or types
+
+
+(define elim-Pair
+  (lambda (A D X)
+    (lambda (p f)
+      (f (car p) (cdr p)))))
+
+(claim kar
+  (Pi ((A U)
+       (D U))
+    (-> (Pair A D)
+      A)))
+
+(define kar
+  (lambda (A D)
+    (lambda (p)
+      (elim-Pair
+        A D
+        A
+        p
+        (lambda (a d)
+          a)))))
+
+
+(claim kdr
+  (Pi ((A U)
+       (D U))
+    (-> (Pair A D)
+      D)))
+
+(define kdr
+  (lambda (A D)
+    (lambda (p)
+      (elim-Pair
+        A D
+        D
+        p
+        (lambda (a d)
+          d)))))
+
+; here we use Pi
+; we can take any type A, any type D
+; accept a (Pair A D)
+; return a (Pair D A)
+; regardless of the type A and D
+(claim flip
+  (Pi ((A U)       ;an A type
+       (D U))      ;a D type
+    (-> (Pair A D) ;a function that takes a Pair A D
+    (Pair D A))))  ;and return a Pair D A
+
+
+(define flip
+  (lambda (A D)
+    (lambda (p)
+      (cons (cdr p) (car p)))))
+
+;(flip Nat Atom) is a the lambda expression
+;  (λ (p)
+;    (cons (cdr p)
+;      (car p))))
+
+;(flip Nat Atom)'s type is 
+;(→ (Pair Nat Atom)
+;       (Pair Atom Nat))
+
+(claim swap
+  (-> (Pair Nat Atom)
+      (Pair Atom Nat)))
+
+(define swap
+  (lambda (p)
+    (elim-Pair
+      Nat Atom        ;type in
+      (Pair Atom Nat) ;type out
+      p
+      (lambda (a d)   ;how to turn transform it
+        (cons d a)))))
+
+(claim twin-Nat
+  (-> Nat
+      (Pair Nat Nat)))
+
+(define twin-Nat
+  (lambda (x)
+    (cons x x)))
+
+(claim twin-Atom
+  (-> Atom
+      (Pair Atom Atom)))
+
+(define twin-Atom
+  (lambda (x)
+    (cons x x)))
+
+(claim twin
+  (Pi ((Y U))
+    (-> Y
+        (Pair Y Y))))
+(define twin
+  (lambda (Y)
+    (lambda (x)
+      (cons x x))))
+
+(claim twin-Atom2
+  (-> Atom
+      (Pair Atom Atom)))
+
+(define twin-Atom2
+  (twin Atom))
+
+(kar Nat Atom (cons 3 'hello))
+(kdr Nat Atom (cons 3 'hello))

@@ -1,0 +1,76 @@
+#lang pie
+
+(the
+  (Pair Atom Atom)
+  (cons 'hello 'bag))
+
+(the Nat
+  (car
+    (the
+      (Pair Nat Atom)
+      (cons 3 'hello))))
+
+(the Atom
+  (cdr
+    (the
+      (Pair Nat Atom)
+      (cons 3 'hello))))
+
+(the Atom
+  (car
+    (the (Pair Atom Atom)
+      (cdr
+        (the (Pair Atom (Pair Atom Atom))
+          (cons 'rata (cons 'baguette 'olive-oil)))))))
+
+
+(the (Pair Atom Atom)
+  (car
+    (the (Pair (Pair Atom Atom) Atom)
+  (cons
+    (the (Pair Atom Atom)
+      (cons 'aubergine 'courgette))
+    'tomato))))
+
+(Pair
+  (the U
+    (car
+      (the (Pair U Atom)
+        (cons Atom 'olive))))
+  (the U
+    (cdr
+      (the (Pair Atom U)
+        (cons 'oil Atom)))))
+
+(the Nat 1)
+
+(the Nat 1729)
+
+(the Nat (add1 0))
+
+;defining one
+(claim one
+  Nat)
+(define one
+  (add1 zero))
+
+;defining two
+(claim two
+  Nat)
+(define two
+  (add1 one))
+
+;defining four
+(claim four
+  Nat)
+(define four
+  (add1
+    (add1
+      (add1
+        (add1 zero)))))
+
+;the constructor of Nat are zero and
+;add1, while the constructor of Pair is
+;cons
+
+;(add1 'aubergine)

@@ -1,0 +1,146 @@
+#lang pie
+;applying a function to arguments is the function's eliminator
+
+;defining the function (kindof)
+(the (-> Atom
+         (Pair Atom Atom))
+  (lambda (flavor)
+    (cons flavor 'lentil)))
+
+;applying the function
+(the (Pair Atom Atom)
+  ((the (-> Atom
+         (Pair Atom Atom))
+  (lambda (flavor)
+    (cons flavor 'lentil)))
+'lentil))
+
+(the (-> Atom Atom
+         (Pair Atom Atom))
+  (lambda (a d)
+    (cons a d)))
+
+;claiming things
+(claim vegetables
+  (Pair Atom Atom))
+(define vegetables
+  (cons 'celery 'carrot))
+
+;using things
+(the (Pair Atom Atom)
+  (cons (car vegetables)
+    (cdr vegetables)))
+
+;which-Nat
+(which-Nat zero
+  'naught
+  (lambda (n)
+    'more))
+
+;which-Nat
+(which-Nat 0
+  (the (Pair Nat Nat) (cons 0 0))
+  (lambda (n)
+    (cons n n)))
+
+(which-Nat 1
+  (the (Pair Nat Nat) (cons 0 0))
+  (lambda (n)
+    (cons n n))) ;n is the value - 1, so this return (cons 0 0)
+
+(which-Nat 14
+  (the (Pair Nat Nat) (cons 0 0))
+  (lambda (n)
+    (cons n n))) ;n is the value - 1, so this return (cons 13 13)
+
+
+;gauss n - sum of the Nats from 0 to n
+(claim gauss
+  (-> Nat
+      Nat))
+
+;gauss (n + 1) -> (+ (add 1) (gauss n))
+;gauss 0 -> 0
+
+;we'd love to define it recursively
+;we also need to define +, which we haven't
+;(define gauss
+;  (lambda (n)
+;    (which-Nat n
+;      0
+;      (lambda (n-1)
+;        (+ (add1 n-1) (gauss n-1))))))
+
+
+;defining types
+(car (the (Pair U Atom)
+       (cons Atom 'prune)))
+
+(the (Pair U U)
+  (cons Atom Atom))
+
+(the (Pair U U)
+  (cons Atom Nat))
+
+(claim Pear
+  U)
+(define Pear
+  (Pair Nat Nat))
+
+(the Pear (cons 3 5))
+(the (Pair Nat Nat) (cons 3 5)) ; same things
+
+;a Pear-maker returns a type
+(claim Pear-maker
+  U)
+
+;a Pear-maker is a function that takes 2 Nat and returns a type Pear
+;there are a few Pear makers
+;lambda (a b)
+; (cons a b)
+; (cons a a)
+; (cons b b)
+; (cons a 13)
+; (cons 13 a)
+; (cons 5 4)...
+
+(define Pear-maker
+  (-> Nat Nat
+      Pear))
+
+;elim-Pear takes a Pear, something that makes a Pear and returns a Pear
+(claim elim-Pear
+  (-> Pear Pear-maker
+      Pear))
+
+(define elim-Pear
+  (lambda (pear maker)
+    (maker (car pear) (cdr pear))))
+
+(elim-Pear
+   (cons 3 17)
+   (lambda (a d)
+     (cons d a)))
+
+(elim-Pear
+  (cons 3 17)
+  (lambda (a d)
+    (cons d d)))
+
+(elim-Pear
+  (cons 3 17)
+  (lambda (a d)
+    (cons 314 a)))
+
+(claim pearwise+
+  (-> Pear Pear
+      Pear))
+;need to dig in here, if only I had the + defined...
+(define pearwise+
+  (lambda (anjou bosc)
+    (elim-Pear anjou
+      (lambda (a1 d1)
+        (elim-Pear bosc
+          (lambda (a2 d2)
+            (cons (+ a1 a2)
+              (+ d1 d2))))))))

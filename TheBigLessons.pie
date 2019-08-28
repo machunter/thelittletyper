@@ -70,3 +70,13 @@
 ; and y does not occur in f, then f is the same as
 ; (lambda (y)
 ;  (f y))
+
+; when it comes to ind-Nat
+; the step is applied as follow
+; (step n
+;   (ind-Nat n
+;     mot
+;     base
+;     step))
+
+; which is the same as rec-Nat with motive

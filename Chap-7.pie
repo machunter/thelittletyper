@@ -1,7 +1,28 @@
 #lang pie
+; discussing peas, which products as many peas as required
+; we'll claim the type as
+
 (claim peas
   (Pi ((how-many-peas Nat))
     (Vec Atom how-many-peas)))
+
+; we've just defined a dependent, it's a type determined by something that's not a type
+
+; we could try this
+;(define Peas
+;  (lambda (how-many-peas)
+;    (rec-Nat how-many-peas
+;      (the (Vec Atom 0) vecnil)
+;      (lambda (l-1 peas_l-1)
+;        (vec:: 'pea peas_l-1)))))
+
+; the problem is is vecnil is a (Vec Atom 0), while the step doesn't retun that
+
+; the magic on ind-Nat (induction Nat), it's used for dependent types
+; we need a new argument to state how the types of the base and the step's almost answer depend on the target Nat
+; it's called the motive
+
+; motive for peas
 
 (claim mot-peas
   (-> Nat
@@ -11,16 +32,28 @@
   (lambda (k)
     (Vec Atom k)))
 
+(mot-peas 4)
+; computes a new type in this case a (Vect Atom 4)
+
+; let's define the step
+
 (claim step-peas
   (Pi ((l-1 Nat))
-       (-> (mot-peas l-1)
-           (mot-peas (add1 l-1)))))
+    (-> (mot-peas l-1)
+        (mot-peas (add1 l-1)))))
 
 (define step-peas
   (lambda (l-1)
-    (lambda (peas-l-1)
-      (vec:: 'pea peas-l-1))))
+    (lambda (peas_l-1)
+      (vec:: 'pea peas_l-1))))
 
+(step-peas 0)
+(step-peas 1)
+(step-peas 2)
+
+; this take a an expression type of size 2 to end up with a type of size 3
+
+; now we can define peas
 (define peas
   (lambda (how-many-peas)
     (ind-Nat how-many-peas
@@ -28,28 +61,104 @@
       vecnil
       step-peas)))
 
+(peas 4)
+; let's break this down, is the same as
+(step-peas 3
+  (ind-Nat 3
+    mot-peas
+    vecnil
+    step-peas))
+; which is the same as
+(step-peas 3
+  (step-peas 2
+    (ind-Nat 2
+      mot-peas
+      vecnil
+      step-peas)))
+
+; which is the same as
+(step-peas 3
+  (step-peas 2
+    (step-peas 1
+      (ind-Nat 1
+        mot-peas
+        vecnil
+        step-peas))))
+
+; which is the same as
+(step-peas 3
+  (step-peas 2
+    (step-peas 1
+      (step-peas 0
+        (ind-Nat 0
+          mot-peas
+          vecnil
+          step-peas)))))
+
+; this term is vecnil
+(ind-Nat 0
+  mot-peas
+  vecnil
+  step-peas)
+
+; so everything rolls in
+(step-peas 3
+  (step-peas 2
+    (step-peas 1
+      (step-peas 0
+        vecnil))))
+
+; calculating each step
+; this is 1 pea
+(step-peas 0 vecnil)
+
+(step-peas 3
+  (step-peas 2
+    (step-peas 1
+      (vec:: 'pea vecnil))))
+
+(step-peas 3
+  (step-peas 2
+    (vec:: 'pea
+      (vec:: 'pea vecnil))))
+
+(step-peas 3
+  (vec:: 'pea
+    (vec:: 'pea
+      (vec:: 'pea vecnil))))
+
+(the (Vec Atom 4)
+(vec:: 'pea
+  (vec:: 'pea
+    (vec:: 'pea
+      (vec:: 'pea vecnil)))))
+
+; if the motive argument is dim, ind-Nat works just like rec-Nat
+; let's define it!
+
 (claim also-rec-Nat
   (Pi ((X U))
-    (-> Nat
-        X
-        (-> Nat X
+    (-> Nat  ; target
+        X    ; base
+        (-> Nat X ; step
             X)
-        X)))
+        X))) ; return
 
 (define also-rec-Nat
   (lambda (X)
     (lambda (target base step)
       (ind-Nat target
-        (lambda(k)
+        (lambda (k) ; the motive returns X regardless of k, everythign else is the same
           X)
         base
         step))))
 
+; let's define last
 (claim last
-  (Pi ((E U)
-       (l Nat))
-    (-> (Vec E (add1 l))
-        E)))
+  (Pi ((E U) ; type of the element
+       (l Nat)) ; size of the vector
+    (-> (Vec E (add1 l)) ; we can't get the last of an empty vector
+        E))) ; and we return E
 
 (claim base-last
   (Pi ((E U))
@@ -59,7 +168,7 @@
 (define base-last
   (lambda (E)
     (lambda (es)
-      (head es))))
+      (head es)))) ; because we return the only element
 
 (claim mot-last
   (-> U Nat
@@ -70,17 +179,78 @@
     (-> (Vec E (add1 k))
         E)))
 
+(mot-last Atom) ; it's a functioon that takes a Nat and return an U
+(mot-last Atom zero) ; it's a function which takes a (Vec Atom 1) and returns an Atom
+(mot-last Atom (add1 zero)); it's a function which takes a (Vec Atom 2) and returns an Atom
+(mot-last Atom (add1 (add1 zero)))
+
+; what is the type of (mot-last Atom (add1 l-1))? it is
+; (-> (Vect Atom (add1
+;                  (add1 l-1)))
+;  Atom)
+
+
+; now we need to figure out the step
+; steps turn the almost answer for l-1 into the answer ofr (add1 l-1)
+; so it's a function that takes (Vec E (add1 l-1)) and return (Vec E (add1 (add1 l-1)))
+
+; so the step must construct a (mot-last E (add1 l-1)) from (mot-last E l-1)
+
+(claim last-step-type
+  (Pi ((E U)
+       (l-1 Nat))
+    (-> (-> (Vec E (add1 l-1))    ;this is (mot-last E l-1)
+            E)
+        (-> (Vec E (add1          ;this is (mot-last E (add1 l-1))
+                     (add1 l-1)))
+            E))))
+
+; what is the mot type?
+(claim mot-type
+  (-> U Nat
+      U))
+
+;so the step type is
+;(claim step-type
+;  (Pi ((n Nat))
+;    (-> (mot-type n)
+;        (mot-type (add1 n)))))
+
 (claim step-last
   (Pi ((E U)
        (l-1 Nat))
-    (-> (mot-last E l-1)
-        (mot-last E (add1 l-1)))))
+    (-> (mot-last E l-1) ; this is a function that can be applied to a (Vec E l-1)
+        (mot-last E (add1 l-1))))) ; this is a function that can be applied to a (Vec E (add1 l-1))
 
 (define step-last
-    (lambda (E l-1)
-      (lambda (last-l-1)
-        (lambda (es)
-          (last-l-1 (tail es))))))
+  (lambda (E l-1)
+    (lambda (last_l-1) ; last_l-1 is a function that can be applied to a (Vec E l-1)
+      (lambda (es)
+        (last_l-1 (tail es)))))) ; we need to talke the tail of es, so that last_l-1 is applied to the correct size vector
+
+; es is a (Vec E (add1 (add1 l-1)))
+; we know by the claim that the the lambda expression is (mot-last E (add1 l-1))
+; we know what mot-last is:
+
+;(define mot-last
+;  (lambda (E k)
+;    (-> (Vec E (add1 k))
+;        E)))
+
+; if we evaluate
+; (mot-last E (add1 l-1))
+; we get
+; (-> (Vec E (add1 (add1 l-1)))
+;  E)
+; so (Vec E (add1 (add1 l-1)) is es
+
+; (tail es)'s type is (Vec E (add1 l-1))
+; last_l-1's type is
+; (-> (Vec E (add1 l-1))
+;   E)
+; which is (mot-last l-1)
+
+; this is fucking hard, my brains hurt.
 
 (define last
   (lambda (E l)
@@ -89,50 +259,101 @@
       (base-last E)
       (step-last E))))
 
-(claim drop-last
-  (Pi ((E U)
-       (l Nat))
-    (-> (Vec E (add1 l))
-        (Vec E l))))
+(claim vec-2
+  (Vec Atom 2))
 
-(claim base-drop-last
-  (Pi ((E U))
-    (-> (Vec E (add1 zero))
-        (Vec E zero))))
+(define vec-2
+  (vec:: 'carrot
+    (vec:: 'celery vecnil)))
 
-(define base-drop-last
-  (lambda (E)
-    (lambda (es)
-      vecnil)))
+(last Atom 1 vec-2)
 
-(claim mot-drop-last
-  (-> U Nat
-      U))
-(define mot-drop-last
-  (lambda (E k)
-    (-> (Vec E (add1 k))
-        (Vec E k))))
+;step.0
+((ind-Nat 1
+  (mot-last Atom)
+  (base-last Atom)
+  (step-last Atom))
+  vec-2)
 
-(claim step-drop-last
-  (Pi ((E U)
-       (l-1 Nat))
-    (-> (mot-drop-last E l-1)
-      (mot-drop-last E (add1 l-1)))))
+;step.1
+(step-last Atom zero
+  (ind-Nat zero
+    (mot-last Atom)
+    (base-last Atom)
+    (step-last Atom))
+  vec-2)
 
-(define step-drop-last
-  (lambda (E l-1)
-    (lambda (drop-last-l-1)
-      (lambda (es)
-        (vec:: (head es)
-          (drop-last-l-1 (tail es)))))))
+; here breaking down things so we can analyze them
+(claim scratch
+  (-> (Vec Atom 1)
+      Atom))
 
-(define drop-last
-  (lambda (E l)
-    (ind-Nat l
-      (mot-drop-last E)
-      (base-drop-last E)
-      (step-drop-last E))))
+(define scratch
+  (ind-Nat zero
+     (mot-last Atom)
+     (base-last Atom)
+     (step-last Atom)))
 
 
+; here is teh outer lambda
+(claim outer-lambda
+  (-> (Vec Atom 2)
+      Atom))
 
+(define outer-lambda
+  (lambda(es)
+    (scratch
+      (tail es))))
 
+(outer-lambda
+  vec-2)
+
+; let's roll back
+((the
+   (-> (Vec Atom 2)
+  Atom)
+  (lambda(es)
+    (scratch
+      (tail es))))
+  vec-2)
+
+;step.2 - here we are
+((the
+   (-> (Vec Atom 2)
+  Atom)
+  (lambda(es)
+    ((ind-Nat zero
+     (mot-last Atom)
+     (base-last Atom)
+     (step-last Atom))
+      (tail es))))
+  vec-2)
+
+;step.3 - so the lambda is applied to vec-2
+((ind-Nat zero
+   (mot-last Atom)
+   (base-last Atom)
+   (step-last Atom))
+   (tail vec-2))
+
+;step.4 - the ind-Nat expression with a zero argument evaluate to base-last
+(base-last Atom
+  (tail vec-2))
+
+(base-last Atom) ; to refresh our memory
+
+;step.5
+((the (-> (Vec Atom 1)
+          Atom)
+ (lambda (es)
+    (head es)))
+  (tail vec-2))
+
+;step.6 - apply the lambda to the tail vec-2
+(head (tail vec-2))
+
+;check the value
+(tail vec-2)
+
+;step.7 - and finally
+(head (the (Vec Atom 1) (vec:: 'celery vecnil)))

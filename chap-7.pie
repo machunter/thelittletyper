@@ -226,7 +226,7 @@
   (lambda (E l-1)
     (lambda (last_l-1) ; last_l-1 is a function that can be applied to a (Vec E l-1)
       (lambda (es)
-        (last_l-1 (tail es)))))) ; we need to talke the tail of es, so that last_l-1 is applied to the correct size vector
+        (last_l-1 (tail es)))))) ; we need to talk the tail of es, so that last_l-1 is applied to the correct size vector
 
 ; es is a (Vec E (add1 (add1 l-1)))
 ; we know by the claim that the the lambda expression is (mot-last E (add1 l-1))
@@ -357,3 +357,160 @@
 
 ;step.7 - and finally
 (head (the (Vec Atom 1) (vec:: 'celery vecnil)))
+
+
+; NEXT - drop-last
+; we can't have nil, therefor the add1 l
+; we return a vec that is one less than the argument
+; and this can be for any E, l Nat
+(claim drop-last
+  (Pi ((E U)
+       (l Nat))
+    (-> (Vec E (add1 l))
+        (Vec E l))))
+
+; base- finds the drop-last of a single-entry list
+; since it would have a single entry, after dropping the last item
+; we end up with vecnil
+
+(claim base-drop-last
+  (Pi ((E U))
+    (-> (Vec E (add1 zero))
+        (Vec E zero))))
+
+(define base-drop-last
+  (lambda (E)
+    (lambda (es)
+      vecnil)))
+
+; remember motive plays with type
+; it describes how drop-last construct a Vec with one less entries
+(claim mot-drop-last
+  (-> U Nat
+      U))
+
+(define mot-drop-last
+  (lambda (E k)
+    (-> (Vec E (add1 k))
+        (Vec E k))))
+
+; step uses the definition pretty much
+; it explain how we take something from the previous step
+; and transform it into the current step
+(claim step-drop-last
+  (Pi ((E U)
+       (l-1 Nat))
+    (-> (mot-drop-last E l-1)
+        (mot-drop-last E (add1 l-1)))))
+;
+(define step-drop-last
+  (lambda (E l-1)
+    (lambda (drop-last_l-1) ;this is a lambda, not a value, it's the lambda from the previous step (l-1)
+      (lambda (es)
+        (vec:: (head es)
+          (drop-last_l-1 (tail es)))))))
+
+(define drop-last
+  (lambda (E l)
+    (ind-Nat l
+      (mot-drop-last E)
+      (base-drop-last E)
+      (step-drop-last E))))
+
+;let's break down an example
+(drop-last Atom
+  (add1
+    (add1 zero)))
+
+;step.0 - let's apply drop-last
+(ind-Nat (add1 (add1 zero))
+  (mot-drop-last Atom)
+  (base-drop-last Atom)
+  (step-drop-last Atom))
+
+;step.1 - eval ind-Nat
+(step-drop-last Atom (add1 zero)
+  (ind-Nat (add1 zero)
+    (mot-drop-last Atom)
+    (base-drop-last Atom)
+    (step-drop-last Atom)))
+
+;step.2 - apply step-drop-last
+(the (-> (Vec Atom 3)
+          (Vec Atom 2))
+   (lambda(es)
+     (vec:: (head es)
+       ((ind-Nat (add1 zero)
+          (mot-drop-last Atom)
+          (base-drop-last Atom)
+          (step-drop-last Atom))
+         (tail es)))))
+
+;step.3 - apply ind-Nat
+(the (-> (Vec Atom 3)
+          (Vec Atom 2))
+   (lambda(es)
+     (vec:: (head es)
+       (step-drop-last Atom zero
+         (ind-Nat zero
+           (mot-drop-last Atom)
+           (base-drop-last Atom)
+           (step-drop-last Atom))
+         (tail es)))))
+
+;step.4 - apply step-drop-last
+;just a refresher
+;(define step-drop-last
+;  (lambda (E l-1)
+;    (lambda (drop-last_l-1) ;this is a lambda, not a value, it's the lambda from the previous step (l-1)
+;      (lambda (es)
+;        (vec:: (head es)
+;          (drop-last_l-1 (tail es)))))))
+
+(the (-> (Vec Atom 3)
+          (Vec Atom 2))
+   (lambda(es)
+     (vec:: (head es)
+       ((the (-> (Vec Atom 2)
+                (Vec Atom 1))
+         (lambda(ys)
+           (vec:: (head ys)
+             ((ind-Nat zero
+                (mot-drop-last Atom)
+                (base-drop-last Atom)
+                (step-drop-last Atom))
+               (tail ys)))))
+       (tail es)))))
+
+;step.5 - evaulate ind-Nat zero to base-drop-last
+(the (-> (Vec Atom 3)
+          (Vec Atom 2))
+   (lambda(es)
+     (vec:: (head es)
+       ((the (-> (Vec Atom 2)
+                (Vec Atom 1))
+         (lambda(ys)
+           (vec:: (head ys)
+             ((base-drop-last Atom)
+               (tail ys)))))
+       (tail es)))))
+
+;step.5 - base-drop-last Atom evaluates to a function that returns vecnil regardless, so the ((base-drop-last Atom) (tail ys)) is vecnil
+(the (-> (Vec Atom 3)
+          (Vec Atom 2))
+   (lambda(es)
+     (vec:: (head es)
+       ((the (-> (Vec Atom 2)
+                (Vec Atom 1))
+         (lambda(ys)
+           (vec:: (head ys)
+             vecnil)))
+       (tail es)))))
+
+;step.6 - so now we are going to plug-in (tail es) where ever we see ys and remove the function expressions
+(the (-> (Vec Atom 3)
+          (Vec Atom 2))
+  (lambda(es)
+    (vec:: (head es)
+      (vec:: (head (tail es))
+        vecnil))))

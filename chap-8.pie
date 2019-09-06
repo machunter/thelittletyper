@@ -1,0 +1,299 @@
+#lang pie
+
+(claim +
+  (-> Nat Nat
+      Nat))
+
+(claim step-+
+  (-> Nat
+   Nat))
+
+(define step-+
+  (lambda (+n-1)
+    (add1 +n-1)))
+
+(define +
+  (lambda(n j)
+    (iter-Nat n
+      j
+      step-+)))
+
+;start here, searching for normal form - step 0
+(claim plus1.0
+  (-> Nat
+    Nat))
+(define plus1.0
+  (+ (add1 zero)))
+;step 1
+(claim plus1.1
+  (-> Nat
+      Nat))
+(define plus1.1
+  (lambda(j)
+    (iter-Nat (add1 0)
+      j
+     step-+)))
+;step 2
+(claim plus1.2
+  (-> Nat
+      Nat))
+(define plus1.2
+  (lambda(j)
+    (step-+
+      (iter-Nat zero
+        j
+        step-+))))
+;step 3
+(claim plus1.3
+  (-> Nat
+      Nat))
+(define plus1.3
+  (lambda(j)
+    (step-+
+      j)))
+;step 4 -- the end
+(claim plus1.4
+  (-> Nat
+      Nat))
+(define plus1.4
+  (lambda(j)
+    (add1 j)))
+
+;another definition
+(claim incr
+  (-> Nat
+      Nat))
+(define incr
+  (lambda (n)
+    (iter-Nat n
+      1
+      (+ 1))))
+
+;normal form of (incr 0)
+(incr 0)
+(iter-Nat zero
+  1
+  (+ 1))
+1
+;done
+
+;normal form of (incr 3)
+(iter-Nat 3
+  1
+  (+ 1))
+
+(+ 1
+  (iter-Nat 2
+    1
+    (+ 1)))
+
+(add1
+  (iter-Nat 2
+    1
+    (+ 1)))
+
+(add1
+  (+ 1
+    (iter-Nat 1
+      1
+      (+ 1))))
+
+(add1
+  (add1
+    (iter-Nat (add1 0)
+      1
+      (+ 1))))
+
+(add1
+  (add1
+    (+ 1
+      (iter-Nat 0
+        1
+        (+ 1)))))
+
+(add1
+  (add1
+    (add1
+      (iter-Nat 0
+        1
+        (+ 1)))))
+
+(add1
+  (add1
+    (add1
+      1)))
+
+; (+ 1) and incr find the same answer
+; but are they the same (-> Nat Nat)?
+; no they have different normal forms
+; let's chat about sameness
+
+(= Atom 'kale 'kale) ; this is a type
+(= Atom 'kale 'black) ; this is also type, but notice how we use two different atoms
+
+; (= Atom 'kale 3) ; this is not allowed
+
+(= (car (the (Pair U Atom) (cons Nat 'kale)))
+  17
+  (+ 14 3))
+
+(= (car (the (Pair U Atom) (cons Nat 'kale)))
+  15
+  (+ 14 3))
+
+; I understand that types can be read as statements
+(= Atom 'apple 'apple)
+; can be read as "The expressions 'apple and 'apple are equal Atoms"
+; but how can we read this
+(= Atom 'apple 'pear)
+; "The expressions 'apple 'pear are ???? Atoms"
+
+(claim for-ever-expression
+  (Pi ((n Nat))
+  (= Nat (+ 1 n) (add1 n))))
+
+
+; this can be read, as for every Nat n, (+ 1 n) equals (add1 n)
+
+; if a type can be read as a statement, then judging the statement to be true means that there is an expression with that type
+; (+ n 0) and n are equal Nats
+; means
+; There is an expression with type (= Nat (+ n 0) n)
+
+(the (= Nat (+ 17 4) (+ 11 10)) (same 21))
+; same is a constructor for =
+; (same e) is an (= X e e)
+
+(claim +1=add1
+  (Pi ((n Nat))
+    (= Nat (+ 1 n) (add1 n))))
+
+;normal form of (+ 1 n) is (add1 n)
+
+(define +1=add1
+  (lambda (n)
+    (same (add1 n))))
+
+(claim incr=add1
+  (Pi ((n Nat))
+    (= Nat (incr n) (add1 n))))
+
+; the normal form of (incr n) requires to evaluate an iter-Nat expressionn
+; which is a neutral expression because it can't be evaluated
+; neutral expressions do not have a constructor at the top
+;(define incr=add1
+;  (lambda(n)
+;    (ind-Nat n
+;      mot-incr=add1
+;      base-incr=add1
+;      step-incr=add1)))
+
+;base's type is the motive applied to 0
+(claim base-incr=add1
+  (= Nat (incr 0) (add1 0)))
+; (incr 0) is NOT neutral
+(define base-incr=add1
+  (same (add1 zero)))
+
+(claim mot-incr=add1
+  (-> Nat
+      U))
+(define mot-incr=add1
+  (lambda(k)
+    (= Nat (incr k) (add1 k))))
+
+;what about the incr?
+(claim step-incr=add1.0
+  (Pi ((n-1 Nat))
+    (-> (mot-incr=add1 n-1)
+        (mot-incr=add1 (add1 n-1)))))
+
+;we can replace the mot-incr with (= Nat expressions)
+(claim step-incr=add1.1
+  (Pi ((n-1 Nat))
+    (-> (= Nat (incr n-1) (add1 n-1))
+        (= Nat (incr (add1 n-1)) (add1 (add1 n-1))))))
+
+;this reads for every Nat n if (incr n) equals (add1 n) then (incr (add1 n)) equals (add1 (add1 n))
+;let's look at the normal form of (add1 n-1)
+(the (-> Nat
+       Nat)
+(lambda(n-1)
+  (incr (add1 n-1))))
+
+(the (-> Nat
+         Nat)
+  (lambda (n-1)
+    (iter-Nat (add1 n-1)
+      1
+      (+ 1))))
+
+(the (-> Nat
+         Nat)
+  (lambda (n-1)
+    (+ 1
+      (iter-Nat n-1
+        1
+        (+ 1)))))
+
+(the (-> Nat
+         Nat)
+  (lambda (n-1)
+    (add1
+      (iter-Nat n-1
+        1
+        (+ 1)))))
+
+(the (-> Nat
+         Nat)
+  (lambda (n-1)
+    (add1
+      (iter-Nat n-1
+        1
+        (lambda(x)
+          (add1 x))))))
+
+; this means that (incr (add1 n-1)) is the same Nat as (add1 (incr n-1))
+(the (-> Nat
+         Nat)
+  (lambda (n-1)
+    (incr
+      (add1 n-1))))
+
+(the (-> Nat
+         Nat)
+  (lambda (n-1)
+    (add1
+      (incr n-1))))
+
+; because
+(the (-> Nat
+         Nat)
+  (lambda (n-1)
+    (incr n-1)))
+; is the same nat as
+(the (-> Nat
+         Nat)
+  (lambda(n-1)
+    (iter-Nat n-1
+      1
+      (lambda(x)
+        (add1 x)))))
+
+;so now we can claim in a final form
+
+(claim step-incr=add1
+  (Pi ((n-1 Nat))
+    (-> (= Nat
+          (incr n-1)
+          (add1 n-1))
+        (= Nat
+          (add1 (incr n-1)) ;we've changed this
+          (add1 (add1 n-1))))))
+
+(define step-incr=add1
+  (lambda (n-1)
+    (lambda (incr=add1_n-1)
+      TODO)))
+
+; now we introduce a new eliminator for = called cong

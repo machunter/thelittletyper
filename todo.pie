@@ -1,0 +1,74 @@
+#lang pie
+(claim peas.0
+  TODO)
+
+(claim peas.1
+  (Pi ((n Nat))
+       TODO))
+
+(claim peas.2
+  (Pi ((n Nat))
+    (Vec Atom n)))
+
+(define peas.2
+  TODO)
+
+(claim peas.3
+  (Pi ((n Nat))
+    (Vec Atom n)))
+
+(define peas.3
+  (lambda (n)
+    (ind-Nat n
+      (lambda(k)
+        (Vec Atom k))
+      TODO
+      TODO)))
+
+(claim peas.4
+  (Pi ((n Nat))
+    (Vec Atom n)))
+
+(define peas.4
+  (lambda (n)
+    (ind-Nat n
+      (lambda(k)
+        (Vec Atom k))
+      vecnil
+      TODO)))
+
+(claim peas.5
+  (Pi ((n Nat))
+    (Vec Atom n)))
+
+(define peas.5
+  (lambda (n)
+    (ind-Nat n
+      (lambda(k)
+        (Vec Atom k))
+      vecnil
+      (lambda (n-1 pease-of-n-1)
+        (vec:: TODO TODO)))))
+
+(claim peas
+  (Pi ((n Nat))
+    (Vec Atom n)))
+
+(define peas
+  (lambda (n)
+    (ind-Nat n
+      (lambda(k)
+        (Vec Atom k))
+      vecnil
+      (lambda (n-1 pease-of-n-1)
+        (vec:: 'peas
+          pease-of-n-1)))))
+
+
+
+
+
+
+
+
+
